@@ -1,0 +1,50 @@
+# Database credentials and sensitive files
+config/db.php
+
+# XAMPP and local development files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+
+# PHP Composer
+vendor/
+
+# Temporary files
+tmp/
+temp/
+
+# Database files (if any local copies)
+*.sql
+*.sqlite
+*.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Cache files
+cache/
+*.cache
+
+# Session files (if stored locally)
+sessions/
