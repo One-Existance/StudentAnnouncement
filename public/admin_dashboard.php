@@ -62,6 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $_POST['expiry_date'] ?? null
             );
             break;
+
+        case 'delete_announcement':
+            if (isset($_POST['announcement_id'])) {
+                $result = $announcementController->deleteAnnouncement($_POST['announcement_id']);
+            }
+            break;
     }
 
     if (isset($result)) {
@@ -83,209 +89,7 @@ $announcements = $announcementController->getAllAnnouncements();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Student Announcement System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-
-        .header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 20px 0;
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            margin: 0;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .user-info span {
-            font-size: 14px;
-        }
-
-        .btn-logout {
-            background-color: #e74c3c;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .btn-logout:hover {
-            background-color: #c0392b;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .dashboard-card {
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .dashboard-card h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background-color: #3498db;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .stat-card.admin { background-color: #9b59b6; }
-        .stat-card.lecturer { background-color: #27ae60; }
-        .stat-card.student { background-color: #e67e22; }
-
-        .stat-card h4 {
-            margin: 0 0 5px 0;
-            font-size: 24px;
-        }
-
-        .stat-card p {
-            margin: 0;
-            font-size: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            font-size: 14px;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .btn-submit {
-            background-color: #3498db;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 14px;
-            width: 100%;
-        }
-
-        .btn-submit:hover {
-            background-color: #2980b9;
-        }
-
-        .message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 3px;
-        }
-
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .data-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .data-item {
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 3px;
-            border-left: 3px solid #3498db;
-        }
-
-        .data-item.admin { border-left-color: #9b59b6; }
-        .data-item.lecturer { border-left-color: #27ae60; }
-        .data-item.student { border-left-color: #e67e22; }
-
-        .data-item h5 {
-            margin: 0 0 5px 0;
-            font-size: 14px;
-        }
-
-        .data-item p {
-            margin: 0;
-            font-size: 12px;
-            color: #666;
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/admin_dashboard.css">
 </head>
 <body>
     <div class="header">
@@ -479,17 +283,66 @@ $announcements = $announcementController->getAllAnnouncements();
                     <?php endforeach; ?>
                 </div>
             </div>
+        </div>
 
-            <div class="dashboard-card">
-                <h3>Recent Announcements</h3>
-                <div class="data-list">
-                    <?php foreach (array_slice(array_reverse($announcements), 0, 5) as $a): ?>
-                        <div class="data-item">
-                            <h5><?php echo htmlspecialchars($a['title']); ?></h5>
-                            <p><?php echo htmlspecialchars(date('M d, Y', strtotime($a['created_at']))); ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+        <!-- Announcements Management -->
+        <div class="dashboard-card" style="margin-top: 30px;">
+            <h3>Manage Announcements</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Title</th>
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Posted By</th>
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Department</th>
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Date</th>
+                            <th style="padding: 12px; text-align: left; font-weight: bold;">Expiry</th>
+                            <th style="padding: 12px; text-align: center; font-weight: bold;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($announcements)): ?>
+                            <tr>
+                                <td colspan="6" style="padding: 20px; text-align: center; color: #999;">No announcements found</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($announcements as $row): 
+                                $announcement = $row;
+                                $announcementId = $announcement['id'];
+                                $announcementPostedBy = $announcement['posted_by'];
+                                $announcementDeptId = $announcement['department_id'];
+                                
+                                $postedBy = array_filter($users, function($u) use ($announcementPostedBy) { return $u['id'] === $announcementPostedBy; });
+                                $postedByName = !empty($postedBy) ? array_values($postedBy)[0]['name'] : 'Unknown';
+                                $dept = array_filter($departments, function($d) use ($announcementDeptId) { return $d['id'] === $announcementDeptId; });
+                                $deptName = !empty($dept) ? array_values($dept)[0]['name'] : 'Unknown';
+                            ?>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 12px; font-weight: 500;"><?php echo htmlspecialchars(substr($announcement['title'], 0, 30)); ?><?php echo strlen($announcement['title']) > 30 ? '...' : ''; ?></td>
+                                    <td style="padding: 12px;"><?php echo htmlspecialchars($postedByName); ?></td>
+                                    <td style="padding: 12px;"><?php echo htmlspecialchars($deptName); ?></td>
+                                    <td style="padding: 12px; font-size: 12px;"><?php echo htmlspecialchars(date('M d, Y', strtotime($announcement['created_at']))); ?></td>
+                                    <td style="padding: 12px; font-size: 12px;">
+                                        <?php if ($announcement['expiry_date']): ?>
+                                            <?php echo htmlspecialchars(date('M d, Y', strtotime($announcement['expiry_date']))); ?>
+                                        <?php else: ?>
+                                            <span style="color: #999;">No expiry</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="view_announcement.php?id=<?php echo htmlspecialchars($announcement['id']); ?>" style="display: inline-block; padding: 6px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; margin-right: 5px;">View</a>
+                                        <a href="edit_announcement.php?id=<?php echo htmlspecialchars($announcement['id']); ?>" style="display: inline-block; padding: 6px 10px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; margin-right: 5px;">Edit</a>
+                                        <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this announcement?');">
+                                            <input type="hidden" name="action" value="delete_announcement">
+                                            <input type="hidden" name="announcement_id" value="<?php echo htmlspecialchars($announcement['id']); ?>">
+                                            <button type="submit" style="padding: 6px 10px; background-color: #e74c3c; color: white; border: none; border-radius: 3px; font-size: 12px; cursor: pointer;">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
