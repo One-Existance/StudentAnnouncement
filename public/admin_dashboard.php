@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $_POST['email'],
                 $_POST['role'],
                 $_POST['department'] ?? null,
+                $_POST['password'] ?? null,
                 $_POST['avatar'] ?? null
             );
             break;
@@ -46,10 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $result = $courseController->createCourse(
                 $_POST['course_name'],
                 $_POST['course_code'],
-                $_POST['dept_id'],
-                $_POST['lecturer_id'] ?? null
+                $_POST['dept_id']
             );
             break;
+
 
         case 'create_announcement':
             $result = $announcementController->createAnnouncement(
@@ -167,8 +168,19 @@ $announcements = $announcementController->getAllAnnouncements();
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" name="password" required>
+                    </div>
+                    <div class="form-group">
                         <label>Department:</label>
-                        <input type="text" name="department">
+                        <select name="department">
+                            <option value="">No Department</option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?php echo htmlspecialchars($dept['id']); ?>">
+                                    <?php echo htmlspecialchars($dept['name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <button type="submit" class="btn-submit">Create User</button>
                 </form>
@@ -215,17 +227,6 @@ $announcements = $announcementController->getAllAnnouncements();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Lecturer:</label>
-                        <select name="lecturer_id">
-                            <option value="">Select Lecturer</option>
-                            <?php foreach (array_filter($users, function($u) { return $u['role'] === 'lecturer'; }) as $lecturer): ?>
-                                <option value="<?php echo htmlspecialchars($lecturer['id']); ?>">
-                                    <?php echo htmlspecialchars($lecturer['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
                     <button type="submit" class="btn-submit">Create Course</button>
                 </form>
             </div>
@@ -265,6 +266,10 @@ $announcements = $announcementController->getAllAnnouncements();
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Attachment (Optional):</label>
+                        <input type="text" name="attachment" placeholder="File path or URL">
+                    </div>
                     <button type="submit" class="btn-submit">Post Announcement</button>
                 </form>
             </div>
@@ -282,6 +287,18 @@ $announcements = $announcementController->getAllAnnouncements();
                         </div>
                     <?php endforeach; ?>
                 </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card" style="margin-top: 30px;">
+            <h3>Management Pages</h3>
+            <div class="link-grid">
+                <a class="link-card" href="admin_students.php">Manage Students</a>
+                <a class="link-card" href="admin_lecturers.php">Manage Lecturers</a>
+                <a class="link-card" href="admin_admins.php">Manage Administrators</a>
+                <a class="link-card" href="admin_courses.php">Manage Courses</a>
+                <a class="link-card" href="admin_departments.php">Manage Departments</a>
+                <a class="link-card" href="admin_password.php">Update Password</a>
             </div>
         </div>
 

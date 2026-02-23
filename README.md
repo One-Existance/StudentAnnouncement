@@ -122,7 +122,7 @@ StudentAnnouncement/
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| `users` | User accounts and authentication | id, name, email, role, department, avatar |
+| `users` | User accounts and authentication | id, name, email, role, department, password, avatar |
 | `departments` | Academic departments | id, name, description |
 | `courses` | Course information | id, course_name, course_code, department_id |
 | `announcements` | Announcement posts | id, title, message, posted_by, department_id, course_id |
@@ -138,6 +138,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     role ENUM('admin','lecturer','student') NOT NULL,
     department VARCHAR(255),
+  password VARCHAR(255),
     avatar VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

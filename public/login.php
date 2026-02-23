@@ -163,23 +163,6 @@ if ($authController->isLoggedIn()) {
             border: 1px solid #f5c6cb;
         }
 
-        .demo-info {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-            border: 1px solid #ffeaa7;
-        }
-
-        .demo-info h4 {
-            margin-bottom: 10px;
-        }
-
-        .demo-info p {
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
     </style>
 </head>
 <body>
@@ -209,12 +192,6 @@ if ($authController->isLoggedIn()) {
             <button type="submit" class="btn-login">Sign In</button>
         </form>
 
-        <div class="demo-info">
-            <h4>Demo Accounts</h4>
-            <p><strong>Admin:</strong> admin@university.edu / password</p>
-            <p><strong>Lecturer:</strong> lecturer@university.edu / password</p>
-            <p><strong>Student:</strong> student@university.edu / password</p>
-        </div>
     </div>
 </body>
 </html>

@@ -22,19 +22,35 @@ $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'create_announcement') {
-        $result = $announcementController->createAnnouncement(
-            $_POST['title'],
-            $_POST['message'],
-            $user['id'],
-            $_POST['department_id'],
-            $_POST['course_id'] ?? null,
-            $_POST['attachment'] ?? null,
-            $_POST['expiry_date'] ?? null
-        );
+    switch ($_POST['action']) {
+        case 'create_announcement':
+            $result = $announcementController->createAnnouncement(
+                $_POST['title'],
+                $_POST['message'],
+                $user['id'],
+                $_POST['department_id'],
+                $_POST['course_id'] ?? null,
+                $_POST['attachment'] ?? null,
+                $_POST['expiry_date'] ?? null
+            );
 
-        $message = $result['message'];
-        $messageType = $result['success'] ? 'success' : 'error';
+            $message = $result['message'];
+            $messageType = $result['success'] ? 'success' : 'error';
+            break;
+
+        case 'delete_announcement':
+            if (isset($_POST['announcement_id'])) {
+                $announcement = $announcementController->getAnnouncementById($_POST['announcement_id']);
+                if ($announcement && $announcement['posted_by'] === $user['id']) {
+                    $result = $announcementController->deleteAnnouncement($_POST['announcement_id']);
+                } else {
+                    $result = ['success' => false, 'message' => 'You can only delete your own announcements'];
+                }
+
+                $message = $result['message'];
+                $messageType = $result['success'] ? 'success' : 'error';
+            }
+            break;
     }
 }
 
@@ -107,6 +123,21 @@ $courses = $courseModel->getAllCourses();
 
         .btn-logout:hover {
             background-color: #c0392b;
+        }
+
+        .btn-secondary {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2980b9;
         }
 
         .container {
@@ -273,6 +304,7 @@ $courses = $courseModel->getAllCourses();
             <h1>Student Announcement System</h1>
             <div class="user-info">
                 <span>Welcome, <?php echo htmlspecialchars($user['name']); ?> (Lecturer)</span>
+                <a href="lecturer_password.php" class="btn-secondary">Update Password</a>
                 <a href="logout.php" class="btn-logout">Logout</a>
             </div>
         </div>
@@ -372,6 +404,12 @@ $courses = $courseModel->getAllCourses();
                             </div>
                             <p><?php echo htmlspecialchars(substr($announcement['message'], 0, 150) . (strlen($announcement['message']) > 150 ? '...' : '')); ?></p>
                             <a href="view_announcement.php?id=<?php echo htmlspecialchars($announcement['id']); ?>" class="btn-view">View</a>
+                            <a href="edit_announcement.php?id=<?php echo htmlspecialchars($announcement['id']); ?>" class="btn-view">Edit</a>
+                            <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this announcement?');">
+                                <input type="hidden" name="action" value="delete_announcement">
+                                <input type="hidden" name="announcement_id" value="<?php echo htmlspecialchars($announcement['id']); ?>">
+                                <button type="submit" class="btn-view" style="background-color: #e74c3c;">Delete</button>
+                            </form>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>

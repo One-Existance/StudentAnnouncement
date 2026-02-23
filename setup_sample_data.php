@@ -77,25 +77,25 @@ echo "Courses created: CS101={$cs101}, CS201={$cs201}, MATH101={$math101}\n";
 echo "Creating users...\n";
 
 // Admin user
-$adminResult = $userController->createUser('System Administrator', 'admin@university.edu', 'admin', null, null);
+$adminResult = $userController->createUser('System Administrator', 'admin@university.edu', 'admin', null, 'password', null);
 echo "Admin Result: " . print_r($adminResult, true) . "\n";
 $admin = $adminResult['success'] ? $adminResult['id'] : null;
 
 // Lecturers
-$lecturer1Result = $userController->createUser('Dr. John Smith', 'lecturer@university.edu', 'lecturer', $csDept, null);
+$lecturer1Result = $userController->createUser('Dr. John Smith', 'lecturer@university.edu', 'lecturer', $csDept, 'password', null);
 echo "Lecturer1 Result: " . print_r($lecturer1Result, true) . "\n";
-$lecturer2Result = $userController->createUser('Prof. Jane Doe', 'lecturer2@university.edu', 'lecturer', $mathDept, null);
+$lecturer2Result = $userController->createUser('Prof. Jane Doe', 'lecturer2@university.edu', 'lecturer', $mathDept, 'password', null);
 echo "Lecturer2 Result: " . print_r($lecturer2Result, true) . "\n";
 
 $lecturer1 = $lecturer1Result['success'] ? $lecturer1Result['id'] : null;
 $lecturer2 = $lecturer2Result['success'] ? $lecturer2Result['id'] : null;
 
 // Students
-$student1Result = $userController->createUser('Alice Johnson', 'student@university.edu', 'student', $csDept, null);
+$student1Result = $userController->createUser('Alice Johnson', 'student@university.edu', 'student', $csDept, 'password', null);
 echo "Student1 Result: " . print_r($student1Result, true) . "\n";
-$student2Result = $userController->createUser('Bob Wilson', 'student2@university.edu', 'student', $mathDept, null);
+$student2Result = $userController->createUser('Bob Wilson', 'student2@university.edu', 'student', $mathDept, 'password', null);
 echo "Student2 Result: " . print_r($student2Result, true) . "\n";
-$student3Result = $userController->createUser('Charlie Brown', 'student3@university.edu', 'student', $physicsDept, null);
+$student3Result = $userController->createUser('Charlie Brown', 'student3@university.edu', 'student', $physicsDept, 'password', null);
 echo "Student3 Result: " . print_r($student3Result, true) . "\n";
 
 $student1 = $student1Result['success'] ? $student1Result['id'] : null;

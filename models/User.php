@@ -13,10 +13,10 @@ class User {
     /**
      * Create a new user
      */
-    public function create($name, $email, $role, $department = null, $avatar = null) {
+    public function create($name, $email, $role, $department = null, $passwordHash = null, $avatar = null) {
         $id = $this->generateUUID();
-        $stmt = $this->pdo->prepare("INSERT INTO users (id, name, email, role, department, avatar, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-        $stmt->execute([$id, $name, $email, $role, $department, $avatar]);
+        $stmt = $this->pdo->prepare("INSERT INTO users (id, name, email, role, department, password, avatar, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+        $stmt->execute([$id, $name, $email, $role, $department, $passwordHash, $avatar]);
         return $id;
     }
 
@@ -58,9 +58,17 @@ class User {
     /**
      * Update user
      */
-    public function update($id, $name, $email, $department = null, $avatar = null) {
-        $stmt = $this->pdo->prepare("UPDATE users SET name = ?, email = ?, department = ?, avatar = ? WHERE id = ?");
-        return $stmt->execute([$name, $email, $department, $avatar, $id]);
+    public function update($id, $name, $email, $role, $department = null) {
+        $stmt = $this->pdo->prepare("UPDATE users SET name = ?, email = ?, role = ?, department = ? WHERE id = ?");
+        return $stmt->execute([$name, $email, $role, $department, $id]);
+    }
+
+    /**
+     * Update user password hash
+     */
+    public function updatePassword($id, $passwordHash) {
+        $stmt = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$passwordHash, $id]);
     }
 
     /**

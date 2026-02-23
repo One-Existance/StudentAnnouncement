@@ -37,9 +37,11 @@ class AuthController {
             return ['success' => false, 'message' => 'Invalid email or password'];
         }
 
-        // For now, we'll use a simple password check
-        // In production, you should use password_hash() and password_verify()
-        if ($password !== 'password') { // Default password for demo
+        if (empty($user['password'])) {
+            return ['success' => false, 'message' => 'Password not set. Contact an administrator'];
+        }
+
+        if (!password_verify($password, $user['password'])) {
             return ['success' => false, 'message' => 'Invalid email or password'];
         }
 

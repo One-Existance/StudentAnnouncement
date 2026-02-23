@@ -87,6 +87,21 @@ foreach ($allAnnouncements as $announcement) {
             background-color: #c0392b;
         }
 
+        .btn-secondary {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2980b9;
+        }
+
         .container {
             max-width: 1200px;
             margin: 30px auto;
@@ -137,6 +152,7 @@ foreach ($allAnnouncements as $announcement) {
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
 
         .announcements-section h3 {
             color: #2c3e50;
@@ -196,6 +212,7 @@ foreach ($allAnnouncements as $announcement) {
             <h1>Student Announcement System</h1>
             <div class="user-info">
                 <span>Welcome, <?php echo htmlspecialchars($user['name']); ?> (Student)</span>
+                <a href="student_password.php" class="btn-secondary">Update Password</a>
                 <a href="logout.php" class="btn-logout">Logout</a>
             </div>
         </div>

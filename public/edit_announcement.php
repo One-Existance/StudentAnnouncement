@@ -10,9 +10,16 @@ require_once __DIR__ . '/../controllers/DepartmentController.php';
 require_once __DIR__ . '/../controllers/CourseController.php';
 
 $authController = new AuthController($pdo);
-$authController->requireRole('admin');
+$authController->requireLogin();
 
 $user = $authController->getCurrentUser();
+$isAdmin = $user && $user['role'] === 'admin';
+$isLecturer = $user && $user['role'] === 'lecturer';
+
+if (!$isAdmin && !$isLecturer) {
+    header('Location: unauthorized.php');
+    exit;
+}
 $announcementController = new AnnouncementController($pdo);
 $departmentController = new DepartmentController($pdo);
 $courseController = new CourseController($pdo);
@@ -27,7 +34,12 @@ $announcementId = $_GET['id'];
 $announcement = $announcementController->getAnnouncementById($announcementId);
 
 if (!$announcement) {
-    header('Location: admin_dashboard.php');
+    header('Location: ' . ($isLecturer ? 'lecturer_dashboard.php' : 'admin_dashboard.php'));
+    exit;
+}
+
+if ($isLecturer && $announcement['posted_by'] !== $user['id']) {
+    header('Location: unauthorized.php');
     exit;
 }
 
@@ -74,7 +86,7 @@ $courses = $courseController->getAllCourses();
         <div class="header-content">
             <h1>Edit Announcement</h1>
             <div class="user-info">
-                <span>Welcome, <?php echo htmlspecialchars($user['name']); ?> (Administrator)</span>
+                <span>Welcome, <?php echo htmlspecialchars($user['name']); ?> (<?php echo $isLecturer ? 'Lecturer' : 'Administrator'; ?>)</span>
                 <a href="logout.php" class="btn-logout">Logout</a>
             </div>
         </div>
@@ -134,13 +146,18 @@ $courses = $courseController->getAllCourses();
                 </div>
 
                 <div class="form-group">
+                    <label for="attachment">Attachment (Optional)</label>
+                    <input type="text" id="attachment" name="attachment" value="<?php echo htmlspecialchars($announcement['attachment'] ?? ''); ?>" placeholder="File path or URL">
+                </div>
+
+                <div class="form-group">
                     <label for="expiry_date">Expiry Date (Optional)</label>
                     <input type="date" id="expiry_date" name="expiry_date" value="<?php echo $announcement['expiry_date'] ? htmlspecialchars(substr($announcement['expiry_date'], 0, 10)) : ''; ?>">
                 </div>
 
                 <div class="button-group">
                     <button type="submit" class="btn-submit">Update Announcement</button>
-                    <a href="admin_dashboard.php" class="btn-cancel">Cancel</a>
+                    <a href="<?php echo $isLecturer ? 'lecturer_dashboard.php' : 'admin_dashboard.php'; ?>" class="btn-cancel">Cancel</a>
                 </div>
             </form>
         </div>

@@ -16,13 +16,13 @@ class CourseController {
     /**
      * Create a new course
      */
-    public function createCourse($course_name, $course_code, $department_id, $lecturer_id = null) {
+    public function createCourse($course_name, $course_code, $department_id) {
         if (empty($course_name) || empty($course_code) || empty($department_id)) {
             return ['success' => false, 'message' => 'Course name, code, and department ID are required'];
         }
 
         try {
-            $id = $this->courseModel->create($course_name, $course_code, $department_id, $lecturer_id);
+            $id = $this->courseModel->create($course_name, $course_code, $department_id);
             return ['success' => true, 'message' => 'Course created successfully', 'id' => $id];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
@@ -60,13 +60,13 @@ class CourseController {
     /**
      * Update course
      */
-    public function updateCourse($id, $course_name, $course_code, $department_id, $lecturer_id = null) {
+    public function updateCourse($id, $course_name, $course_code, $department_id) {
         if (empty($course_name) || empty($course_code) || empty($department_id)) {
             return ['success' => false, 'message' => 'Course name, code, and department ID are required'];
         }
 
         try {
-            $this->courseModel->update($id, $course_name, $course_code, $department_id, $lecturer_id);
+            $this->courseModel->update($id, $course_name, $course_code, $department_id);
             return ['success' => true, 'message' => 'Course updated successfully'];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];

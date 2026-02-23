@@ -13,10 +13,10 @@ class Course {
     /**
      * Create a new course
      */
-    public function create($course_name, $course_code, $department_id, $lecturer_id = null) {
+    public function create($course_name, $course_code, $department_id) {
         $id = $this->generateUUID();
-        $stmt = $this->pdo->prepare("INSERT INTO courses (id, course_name, course_code, department_id, lecturer_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
-        $stmt->execute([$id, $course_name, $course_code, $department_id, $lecturer_id]);
+        $stmt = $this->pdo->prepare("INSERT INTO courses (id, course_name, course_code, department_id, created_at) VALUES (?, ?, ?, ?, NOW())");
+        $stmt->execute([$id, $course_name, $course_code, $department_id]);
         return $id;
     }
 
@@ -58,9 +58,9 @@ class Course {
     /**
      * Update course
      */
-    public function update($id, $course_name, $course_code, $department_id, $lecturer_id = null) {
-        $stmt = $this->pdo->prepare("UPDATE courses SET course_name = ?, course_code = ?, department_id = ?, lecturer_id = ? WHERE id = ?");
-        return $stmt->execute([$course_name, $course_code, $department_id, $lecturer_id, $id]);
+    public function update($id, $course_name, $course_code, $department_id) {
+        $stmt = $this->pdo->prepare("UPDATE courses SET course_name = ?, course_code = ?, department_id = ? WHERE id = ?");
+        return $stmt->execute([$course_name, $course_code, $department_id, $id]);
     }
 
     /**
