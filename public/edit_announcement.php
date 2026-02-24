@@ -55,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $_POST['department_id'],
         $_POST['course_id'] ?? null,
         $_POST['attachment'] ?? null,
-        $_POST['expiry_date'] ?? null
+        $_POST['expiry_date'] ?? null,
+        $user['id']
     );
 
     if ($result['success']) {
@@ -138,7 +139,7 @@ $courses = $courseController->getAllCourses();
                     <select id="course_id" name="course_id">
                         <option value="">Select Course</option>
                         <?php foreach ($courses as $course): ?>
-                            <option value="<?php echo htmlspecialchars($course['id']); ?>" <?php echo $course['id'] === $announcement['course_id'] ? 'selected' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars($course['id']); ?>" data-department-id="<?php echo htmlspecialchars($course['department_id']); ?>" <?php echo $course['id'] === $announcement['course_id'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($course['course_name']); ?>
                             </option>
                         <?php endforeach; ?>
@@ -162,5 +163,31 @@ $courses = $courseController->getAllCourses();
             </form>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const departmentSelect = document.getElementById('department_id');
+            const courseSelect = document.getElementById('course_id');
+            if (!departmentSelect || !courseSelect) return;
+
+            function filterCoursesByDepartment() {
+                const selectedDepartment = departmentSelect.value;
+                const options = courseSelect.querySelectorAll('option[data-department-id]');
+                const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+                const selectedOptionDept = selectedOption ? selectedOption.dataset.departmentId : null;
+
+                options.forEach(function (option) {
+                    option.hidden = selectedDepartment !== '' && option.dataset.departmentId !== selectedDepartment;
+                });
+
+                if (selectedDepartment !== '' && selectedOptionDept && selectedOptionDept !== selectedDepartment) {
+                    courseSelect.value = '';
+                }
+            }
+
+            departmentSelect.addEventListener('change', filterCoursesByDepartment);
+            filterCoursesByDepartment();
+        })();
+    </script>
 </body>
 </html>

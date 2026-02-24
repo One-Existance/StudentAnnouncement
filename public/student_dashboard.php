@@ -13,14 +13,15 @@ $authController->requireRole('student');
 $user = $authController->getCurrentUser();
 $announcementController = new AnnouncementController($pdo);
 
-// Get announcements relevant to the student
-$allAnnouncements = $announcementController->getActiveAnnouncements();
+$searchKeyword = trim($_GET['q'] ?? '');
 
-// Filter announcements based on student's department if specified
-$relevantAnnouncements = [];
-foreach ($allAnnouncements as $announcement) {
-    // Show all announcements to students, or filter by department if needed
-    $relevantAnnouncements[] = $announcement;
+// Get announcements relevant to the student
+$relevantAnnouncements = $announcementController->getActiveAnnouncementsByDepartment($user['department']);
+
+if ($searchKeyword !== '') {
+    $relevantAnnouncements = array_values(array_filter($relevantAnnouncements, function($announcement) use ($searchKeyword) {
+        return stripos($announcement['title'], $searchKeyword) !== false || stripos($announcement['message'], $searchKeyword) !== false;
+    }));
 }
 ?>
 
@@ -159,6 +160,39 @@ foreach ($allAnnouncements as $announcement) {
             margin-bottom: 20px;
         }
 
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-form button,
+        .search-form a {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .search-form button {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .search-form a {
+            background-color: #95a5a6;
+            color: white;
+        }
+
         .announcement-item {
             background-color: #f9f9f9;
             padding: 15px;
@@ -237,6 +271,12 @@ foreach ($allAnnouncements as $announcement) {
 
         <div class="announcements-section">
             <h3>Recent Announcements</h3>
+
+            <form method="GET" class="search-form">
+                <input type="text" name="q" placeholder="Search announcements" value="<?php echo htmlspecialchars($searchKeyword); ?>">
+                <button type="submit">Search</button>
+                <a href="student_dashboard.php">Reset</a>
+            </form>
 
             <?php if (empty($relevantAnnouncements)): ?>
                 <div class="no-announcements">

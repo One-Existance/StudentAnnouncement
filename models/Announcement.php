@@ -47,6 +47,15 @@ class Announcement {
     }
 
     /**
+     * Get active announcements by department
+     */
+    public function getActiveAnnouncementsByDepartment($department_id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM announcements WHERE department_id = ? AND (expiry_date IS NULL OR expiry_date >= CURDATE()) ORDER BY created_at DESC");
+        $stmt->execute([$department_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Get announcements by course
      */
     public function getAnnouncementsByCourse($course_id) {
@@ -77,6 +86,14 @@ class Announcement {
      */
     public function delete($id) {
         $stmt = $this->pdo->prepare("DELETE FROM announcements WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+
+    /**
+     * Archive announcement by marking it expired
+     */
+    public function archive($id) {
+        $stmt = $this->pdo->prepare("UPDATE announcements SET expiry_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) WHERE id = ?");
         return $stmt->execute([$id]);
     }
 

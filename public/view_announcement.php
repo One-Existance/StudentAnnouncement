@@ -25,6 +25,11 @@ if (!$announcement) {
     exit;
 }
 
+if ($user['role'] === 'student' && $announcement['department_id'] !== $user['department']) {
+    header('Location: unauthorized.php');
+    exit;
+}
+
 // Record view if student_id is provided or use current user
 $studentId = $_GET['student_id'] ?? $user['id'];
 $announcementController->recordAnnouncementView($_GET['id'], $studentId);

@@ -348,11 +348,11 @@ $courses = $courseModel->getAllCourses();
                     </div>
 
                     <div class="form-group">
-                        <label for="course_id">Course (Optional):</label>
+                        <label for="course_id">Course (Required):</label>
                         <select id="course_id" name="course_id">
                             <option value="">Select Course</option>
                             <?php foreach ($courses as $course): ?>
-                                <option value="<?php echo htmlspecialchars($course['id']); ?>">
+                                <option value="<?php echo htmlspecialchars($course['id']); ?>" data-department-id="<?php echo htmlspecialchars($course['department_id']); ?>">
                                     <?php echo htmlspecialchars($course['course_name']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -416,5 +416,27 @@ $courses = $courseModel->getAllCourses();
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const departmentSelect = document.getElementById('department_id');
+            const courseSelect = document.getElementById('course_id');
+            if (!departmentSelect || !courseSelect) return;
+
+            function filterCoursesByDepartment() {
+                const selectedDepartment = departmentSelect.value;
+                const options = courseSelect.querySelectorAll('option[data-department-id]');
+
+                courseSelect.value = '';
+
+                options.forEach(function (option) {
+                    option.hidden = selectedDepartment !== '' && option.dataset.departmentId !== selectedDepartment;
+                });
+            }
+
+            departmentSelect.addEventListener('change', filterCoursesByDepartment);
+            filterCoursesByDepartment();
+        })();
+    </script>
 </body>
 </html>

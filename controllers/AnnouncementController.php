@@ -8,10 +8,12 @@ require_once __DIR__ . '/../models/Announcement.php';
 require_once __DIR__ . '/../models/AnnouncementView.php';
 
 class AnnouncementController {
+    private $pdo;
     private $announcementModel;
     private $announcementViewModel;
 
     public function __construct($pdo) {
+        $this->pdo = $pdo;
         $this->announcementModel = new Announcement($pdo);
         $this->announcementViewModel = new AnnouncementView($pdo);
     }
@@ -22,6 +24,15 @@ class AnnouncementController {
     public function createAnnouncement($title, $message, $posted_by, $department_id, $course_id = null, $attachment = null, $expiry_date = null) {
         if (empty($title) || empty($message) || empty($posted_by) || empty($department_id)) {
             return ['success' => false, 'message' => 'Title, message, posted by, and department ID are required'];
+        }
+
+        $course_id = $this->normalizeNullableValue($course_id);
+        $attachment = $this->normalizeNullableValue($attachment);
+        $expiry_date = $this->normalizeNullableValue($expiry_date);
+
+        $authCheck = $this->validateLecturerAnnouncementScope($posted_by, $department_id, $course_id);
+        if (!$authCheck['success']) {
+            return $authCheck;
         }
 
         try {
@@ -75,16 +86,50 @@ class AnnouncementController {
     }
 
     /**
+     * Get active announcements by department
+     */
+    public function getActiveAnnouncementsByDepartment($department_id) {
+        return $this->announcementModel->getActiveAnnouncementsByDepartment($department_id);
+    }
+
+    /**
      * Update announcement
      */
-    public function updateAnnouncement($id, $title, $message, $department_id, $course_id = null, $attachment = null, $expiry_date = null) {
+    public function updateAnnouncement($id, $title, $message, $department_id, $course_id = null, $attachment = null, $expiry_date = null, $updated_by = null) {
         if (empty($title) || empty($message) || empty($department_id)) {
             return ['success' => false, 'message' => 'Title, message, and department ID are required'];
+        }
+
+        $existing = $this->announcementModel->getAnnouncementById($id);
+        if (!$existing) {
+            return ['success' => false, 'message' => 'Announcement not found'];
+        }
+
+        $course_id = $this->normalizeNullableValue($course_id);
+        $attachment = $this->normalizeNullableValue($attachment);
+        $expiry_date = $this->normalizeNullableValue($expiry_date);
+
+        $actorId = $this->normalizeNullableValue($updated_by) ?? $existing['posted_by'];
+        $authCheck = $this->validateLecturerAnnouncementScope($actorId, $department_id, $course_id);
+        if (!$authCheck['success']) {
+            return $authCheck;
         }
 
         try {
             $this->announcementModel->update($id, $title, $message, $department_id, $course_id, $attachment, $expiry_date);
             return ['success' => true, 'message' => 'Announcement updated successfully'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Archive announcement
+     */
+    public function archiveAnnouncement($id) {
+        try {
+            $this->announcementModel->archive($id);
+            return ['success' => true, 'message' => 'Announcement archived successfully'];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
@@ -126,6 +171,58 @@ class AnnouncementController {
      */
     public function getViewsByAnnouncement($announcement_id) {
         return $this->announcementViewModel->getViewsByAnnouncement($announcement_id);
+    }
+
+    private function normalizeNullableValue($value) {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private function validateLecturerAnnouncementScope($userId, $department_id, $course_id) {
+        $stmt = $this->pdo->prepare("SELECT role, department FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            return ['success' => false, 'message' => 'Invalid user context'];
+        }
+
+        if ($user['role'] !== 'lecturer') {
+            return ['success' => true];
+        }
+
+        if (empty($course_id)) {
+            return ['success' => false, 'message' => 'Lecturers can only post announcements for their courses'];
+        }
+
+        if ($user['department'] !== $department_id) {
+            return ['success' => false, 'message' => 'Lecturers can only post to their own department'];
+        }
+
+        $courseStmt = $this->pdo->prepare("SELECT id, department_id, lecturer_id FROM courses WHERE id = ?");
+        $courseStmt->execute([$course_id]);
+        $course = $courseStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$course) {
+            return ['success' => false, 'message' => 'Selected course does not exist'];
+        }
+
+        if ($course['department_id'] !== $department_id) {
+            return ['success' => false, 'message' => 'Selected course is not in the selected department'];
+        }
+
+        if (!empty($course['lecturer_id']) && $course['lecturer_id'] !== $userId) {
+            return ['success' => false, 'message' => 'You are not assigned to the selected course'];
+        }
+
+        return ['success' => true];
     }
 }
 ?>

@@ -69,6 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $result = $announcementController->deleteAnnouncement($_POST['announcement_id']);
             }
             break;
+
+        case 'archive_announcement':
+            if (isset($_POST['announcement_id'])) {
+                $result = $announcementController->archiveAnnouncement($_POST['announcement_id']);
+            }
+            break;
     }
 
     if (isset($result)) {
@@ -246,7 +252,7 @@ $announcements = $announcementController->getAllAnnouncements();
                     </div>
                     <div class="form-group">
                         <label>Department:</label>
-                        <select name="department_id" required>
+                        <select id="announcement_department_id" name="department_id" required>
                             <option value="">Select Department</option>
                             <?php foreach ($departments as $dept): ?>
                                 <option value="<?php echo htmlspecialchars($dept['id']); ?>">
@@ -257,10 +263,10 @@ $announcements = $announcementController->getAllAnnouncements();
                     </div>
                     <div class="form-group">
                         <label>Course:</label>
-                        <select name="course_id">
+                        <select id="announcement_course_id" name="course_id">
                             <option value="">Select Course</option>
                             <?php foreach ($courses as $course): ?>
-                                <option value="<?php echo htmlspecialchars($course['id']); ?>">
+                                <option value="<?php echo htmlspecialchars($course['id']); ?>" data-department-id="<?php echo htmlspecialchars($course['department_id']); ?>">
                                     <?php echo htmlspecialchars($course['course_name']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -349,6 +355,13 @@ $announcements = $announcementController->getAllAnnouncements();
                                     <td style="padding: 12px; text-align: center;">
                                         <a href="view_announcement.php?id=<?php echo htmlspecialchars($announcement['id']); ?>" style="display: inline-block; padding: 6px 10px; background-color: #3498db; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; margin-right: 5px;">View</a>
                                         <a href="edit_announcement.php?id=<?php echo htmlspecialchars($announcement['id']); ?>" style="display: inline-block; padding: 6px 10px; background-color: #27ae60; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; margin-right: 5px;">Edit</a>
+                                        <?php if (!$announcement['expiry_date'] || strtotime($announcement['expiry_date']) >= strtotime(date('Y-m-d'))): ?>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirm('Archive this announcement now?');">
+                                                <input type="hidden" name="action" value="archive_announcement">
+                                                <input type="hidden" name="announcement_id" value="<?php echo htmlspecialchars($announcement['id']); ?>">
+                                                <button type="submit" style="padding: 6px 10px; background-color: #f39c12; color: white; border: none; border-radius: 3px; font-size: 12px; cursor: pointer; margin-right: 5px;">Archive</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this announcement?');">
                                             <input type="hidden" name="action" value="delete_announcement">
                                             <input type="hidden" name="announcement_id" value="<?php echo htmlspecialchars($announcement['id']); ?>">
@@ -363,5 +376,27 @@ $announcements = $announcementController->getAllAnnouncements();
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const departmentSelect = document.getElementById('announcement_department_id');
+            const courseSelect = document.getElementById('announcement_course_id');
+            if (!departmentSelect || !courseSelect) return;
+
+            function filterCoursesByDepartment() {
+                const selectedDepartment = departmentSelect.value;
+                const options = courseSelect.querySelectorAll('option[data-department-id]');
+
+                courseSelect.value = '';
+
+                options.forEach(function (option) {
+                    option.hidden = selectedDepartment !== '' && option.dataset.departmentId !== selectedDepartment;
+                });
+            }
+
+            departmentSelect.addEventListener('change', filterCoursesByDepartment);
+            filterCoursesByDepartment();
+        })();
+    </script>
 </body>
 </html>

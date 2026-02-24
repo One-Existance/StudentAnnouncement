@@ -65,7 +65,8 @@ $result = $announcementController->updateAnnouncement(
     $departmentId,
     $courseId,
     $attachment,
-    $expiryDate
+    $expiryDate,
+    $user['id']
 );
 
 if ($result['success']) {

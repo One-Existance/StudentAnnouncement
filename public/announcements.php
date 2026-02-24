@@ -6,13 +6,61 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../controllers/AuthController.php';
 require_once __DIR__ . '/../controllers/AnnouncementController.php';
+require_once __DIR__ . '/../controllers/DepartmentController.php';
+require_once __DIR__ . '/../controllers/CourseController.php';
 
 $authController = new AuthController($pdo);
 $authController->requireLogin();
 
 $user = $authController->getCurrentUser();
 $announcementController = new AnnouncementController($pdo);
-$announcements = $announcementController->getActiveAnnouncements();
+$departmentController = new DepartmentController($pdo);
+$courseController = new CourseController($pdo);
+
+$searchKeyword = trim($_GET['q'] ?? '');
+$filterDepartment = trim($_GET['department_id'] ?? '');
+$filterCourse = trim($_GET['course_id'] ?? '');
+$filterYear = trim($_GET['year'] ?? '');
+
+if ($user['role'] === 'student') {
+    $announcements = $announcementController->getActiveAnnouncementsByDepartment($user['department']);
+    $filterDepartment = $user['department'];
+    $filterCourse = '';
+} else {
+    $announcements = $announcementController->getActiveAnnouncements();
+}
+
+if ($searchKeyword !== '') {
+    $announcements = array_filter($announcements, function($announcement) use ($searchKeyword) {
+        return stripos($announcement['title'], $searchKeyword) !== false || stripos($announcement['message'], $searchKeyword) !== false;
+    });
+}
+
+if ($filterDepartment !== '') {
+    $announcements = array_filter($announcements, function($announcement) use ($filterDepartment) {
+        return $announcement['department_id'] === $filterDepartment;
+    });
+}
+
+if ($filterCourse !== '' && $user['role'] !== 'student') {
+    $announcements = array_filter($announcements, function($announcement) use ($filterCourse) {
+        return $announcement['course_id'] === $filterCourse;
+    });
+}
+
+if ($filterYear !== '') {
+    $announcements = array_filter($announcements, function($announcement) use ($filterYear) {
+        return date('Y', strtotime($announcement['created_at'])) === $filterYear;
+    });
+}
+
+$announcements = array_values($announcements);
+usort($announcements, function($a, $b) {
+    return strtotime($b['created_at']) <=> strtotime($a['created_at']);
+});
+
+$departments = $departmentController->getAllDepartments();
+$courses = $courseController->getAllCourses();
 ?>
 
 <!DOCTYPE html>
@@ -97,6 +145,42 @@ $announcements = $announcementController->getActiveAnnouncements();
             padding: 30px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin: 15px 0 20px;
+        }
+
+        .filters input,
+        .filters select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .filters button,
+        .filters a {
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filters button {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .filters a {
+            background-color: #95a5a6;
+            color: white;
         }
         
         .announcement-item {
@@ -184,6 +268,37 @@ $announcements = $announcementController->getActiveAnnouncements();
     <div class="container">
         <div class="content">
             <h2>Announcements</h2>
+
+            <form method="GET" class="filters">
+                <input type="text" name="q" placeholder="Search keyword" value="<?php echo htmlspecialchars($searchKeyword); ?>">
+
+                <select name="department_id" <?php echo $user['role'] === 'student' ? 'disabled' : ''; ?>>
+                    <option value="">All Departments</option>
+                    <?php foreach ($departments as $department): ?>
+                        <option value="<?php echo htmlspecialchars($department['id']); ?>" <?php echo $filterDepartment === $department['id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($department['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if ($user['role'] === 'student'): ?>
+                    <input type="hidden" name="department_id" value="<?php echo htmlspecialchars($filterDepartment); ?>">
+                <?php endif; ?>
+
+                <?php if ($user['role'] !== 'student'): ?>
+                    <select name="course_id">
+                        <option value="">All Courses</option>
+                        <?php foreach ($courses as $course): ?>
+                            <option value="<?php echo htmlspecialchars($course['id']); ?>" <?php echo $filterCourse === $course['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($course['course_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
+
+                <input type="number" min="2000" max="2100" name="year" placeholder="Year (e.g. 2026)" value="<?php echo htmlspecialchars($filterYear); ?>">
+                <button type="submit">Apply Filters</button>
+                <a href="announcements.php">Reset</a>
+            </form>
             
             <?php if (empty($announcements)): ?>
                 <div class="no-announcements">
@@ -202,8 +317,10 @@ $announcements = $announcementController->getActiveAnnouncements();
                         <p><?php echo nl2br(htmlspecialchars(substr($announcement['message'], 0, 200) . '...')); ?></p>
                         
                         <button class="btn-view" onclick="viewAnnouncement('<?php echo htmlspecialchars($announcement['id']); ?>')">View</button>
-                        <button class="btn-edit" onclick="editAnnouncement('<?php echo htmlspecialchars($announcement['id']); ?>')">Edit</button>
-                        <button class="btn-delete" onclick="deleteAnnouncement('<?php echo htmlspecialchars($announcement['id']); ?>')">Delete</button>
+                        <?php if ($user['role'] === 'admin' || $user['role'] === 'lecturer'): ?>
+                            <button class="btn-edit" onclick="editAnnouncement('<?php echo htmlspecialchars($announcement['id']); ?>')">Edit</button>
+                            <button class="btn-delete" onclick="deleteAnnouncement('<?php echo htmlspecialchars($announcement['id']); ?>')">Delete</button>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
