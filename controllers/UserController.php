@@ -25,13 +25,16 @@ class UserController {
             return ['success' => false, 'message' => 'Password must be at least 6 characters'];
         }
 
-        try {
-            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            $id = $this->userModel->create($name, $email, $role, $department, $passwordHash, $avatar);
-            return ['success' => true, 'message' => 'User created successfully', 'id' => $id];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        [$department, $avatar] = $this->normalizeNullableValues([$department, $avatar]);
+
+        return $this->runAction(
+            function () use ($name, $email, $role, $department, $password, $avatar) {
+                $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                return $this->userModel->create($name, $email, $role, $department, $passwordHash, $avatar);
+            },
+            'User created successfully',
+            true
+        );
     }
 
     /**
@@ -70,12 +73,14 @@ class UserController {
             return ['success' => false, 'message' => 'Name, email, and role are required'];
         }
 
-        try {
-            $this->userModel->update($id, $name, $email, $role, $department);
-            return ['success' => true, 'message' => 'User updated successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        $department = $this->normalizeNullableValue($department);
+
+        return $this->runAction(
+            function () use ($id, $name, $email, $role, $department) {
+                $this->userModel->update($id, $name, $email, $role, $department);
+            },
+            'User updated successfully'
+        );
     }
 
     /**
@@ -101,24 +106,57 @@ class UserController {
 
         $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
-        try {
-            $this->userModel->updatePassword($id, $passwordHash);
-            return ['success' => true, 'message' => 'Password updated successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($id, $passwordHash) {
+                $this->userModel->updatePassword($id, $passwordHash);
+            },
+            'Password updated successfully'
+        );
     }
 
     /**
      * Delete user
      */
     public function deleteUser($id) {
+        return $this->runAction(
+            function () use ($id) {
+                $this->userModel->delete($id);
+            },
+            'User deleted successfully'
+        );
+    }
+
+    private function runAction($action, $successMessage, $includeId = false) {
         try {
-            $this->userModel->delete($id);
-            return ['success' => true, 'message' => 'User deleted successfully'];
+            $result = $action();
+            $response = ['success' => true, 'message' => $successMessage];
+
+            if ($includeId) {
+                $response['id'] = $result;
+            }
+
+            return $response;
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
+    }
+
+    private function normalizeNullableValue($value) {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private function normalizeNullableValues($values) {
+        return array_map(function ($value) {
+            return $this->normalizeNullableValue($value);
+        }, $values);
     }
 }
 ?>

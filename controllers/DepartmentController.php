@@ -21,12 +21,15 @@ class DepartmentController {
             return ['success' => false, 'message' => 'Department name is required'];
         }
 
-        try {
-            $id = $this->departmentModel->create($name, $description);
-            return ['success' => true, 'message' => 'Department created successfully', 'id' => $id];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        $description = $this->normalizeNullableValue($description);
+
+        return $this->runAction(
+            function () use ($name, $description) {
+                return $this->departmentModel->create($name, $description);
+            },
+            'Department created successfully',
+            true
+        );
     }
 
     /**
@@ -51,24 +54,53 @@ class DepartmentController {
             return ['success' => false, 'message' => 'Department name is required'];
         }
 
-        try {
-            $this->departmentModel->update($id, $name, $description);
-            return ['success' => true, 'message' => 'Department updated successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        $description = $this->normalizeNullableValue($description);
+
+        return $this->runAction(
+            function () use ($id, $name, $description) {
+                $this->departmentModel->update($id, $name, $description);
+            },
+            'Department updated successfully'
+        );
     }
 
     /**
      * Delete department
      */
     public function deleteDepartment($id) {
+        return $this->runAction(
+            function () use ($id) {
+                $this->departmentModel->delete($id);
+            },
+            'Department deleted successfully'
+        );
+    }
+
+    private function runAction($action, $successMessage, $includeId = false) {
         try {
-            $this->departmentModel->delete($id);
-            return ['success' => true, 'message' => 'Department deleted successfully'];
+            $result = $action();
+            $response = ['success' => true, 'message' => $successMessage];
+
+            if ($includeId) {
+                $response['id'] = $result;
+            }
+
+            return $response;
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
+    }
+
+    private function normalizeNullableValue($value) {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return null;
+        }
+
+        return $value;
     }
 }
 ?>

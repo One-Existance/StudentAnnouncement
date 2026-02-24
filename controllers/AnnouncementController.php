@@ -26,21 +26,20 @@ class AnnouncementController {
             return ['success' => false, 'message' => 'Title, message, posted by, and department ID are required'];
         }
 
-        $course_id = $this->normalizeNullableValue($course_id);
-        $attachment = $this->normalizeNullableValue($attachment);
-        $expiry_date = $this->normalizeNullableValue($expiry_date);
+        [$course_id, $attachment, $expiry_date] = $this->normalizeNullableValues([$course_id, $attachment, $expiry_date]);
 
         $authCheck = $this->validateLecturerAnnouncementScope($posted_by, $department_id, $course_id);
         if (!$authCheck['success']) {
             return $authCheck;
         }
 
-        try {
-            $id = $this->announcementModel->create($title, $message, $posted_by, $department_id, $course_id, $attachment, $expiry_date);
-            return ['success' => true, 'message' => 'Announcement created successfully', 'id' => $id];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($title, $message, $posted_by, $department_id, $course_id, $attachment, $expiry_date) {
+                return $this->announcementModel->create($title, $message, $posted_by, $department_id, $course_id, $attachment, $expiry_date);
+            },
+            'Announcement created successfully',
+            true
+        );
     }
 
     /**
@@ -105,9 +104,7 @@ class AnnouncementController {
             return ['success' => false, 'message' => 'Announcement not found'];
         }
 
-        $course_id = $this->normalizeNullableValue($course_id);
-        $attachment = $this->normalizeNullableValue($attachment);
-        $expiry_date = $this->normalizeNullableValue($expiry_date);
+        [$course_id, $attachment, $expiry_date] = $this->normalizeNullableValues([$course_id, $attachment, $expiry_date]);
 
         $actorId = $this->normalizeNullableValue($updated_by) ?? $existing['posted_by'];
         $authCheck = $this->validateLecturerAnnouncementScope($actorId, $department_id, $course_id);
@@ -115,45 +112,60 @@ class AnnouncementController {
             return $authCheck;
         }
 
-        try {
-            $this->announcementModel->update($id, $title, $message, $department_id, $course_id, $attachment, $expiry_date);
-            return ['success' => true, 'message' => 'Announcement updated successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($id, $title, $message, $department_id, $course_id, $attachment, $expiry_date) {
+                $this->announcementModel->update($id, $title, $message, $department_id, $course_id, $attachment, $expiry_date);
+            },
+            'Announcement updated successfully'
+        );
     }
 
     /**
      * Archive announcement
      */
     public function archiveAnnouncement($id) {
-        try {
-            $this->announcementModel->archive($id);
-            return ['success' => true, 'message' => 'Announcement archived successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($id) {
+                $this->announcementModel->archive($id);
+            },
+            'Announcement archived successfully'
+        );
     }
 
     /**
      * Delete announcement
      */
     public function deleteAnnouncement($id) {
-        try {
-            $this->announcementModel->delete($id);
-            return ['success' => true, 'message' => 'Announcement deleted successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($id) {
+                $this->announcementModel->delete($id);
+            },
+            'Announcement deleted successfully'
+        );
     }
 
     /**
      * Record announcement view
      */
     public function recordAnnouncementView($announcement_id, $student_id) {
+        return $this->runAction(
+            function () use ($announcement_id, $student_id) {
+                $this->announcementViewModel->recordView($announcement_id, $student_id);
+            },
+            'View recorded successfully'
+        );
+    }
+
+    private function runAction($action, $successMessage, $includeId = false) {
         try {
-            $this->announcementViewModel->recordView($announcement_id, $student_id);
-            return ['success' => true, 'message' => 'View recorded successfully'];
+            $result = $action();
+            $response = ['success' => true, 'message' => $successMessage];
+
+            if ($includeId) {
+                $response['id'] = $result;
+            }
+
+            return $response;
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
@@ -183,6 +195,12 @@ class AnnouncementController {
         }
 
         return $value;
+    }
+
+    private function normalizeNullableValues($values) {
+        return array_map(function ($value) {
+            return $this->normalizeNullableValue($value);
+        }, $values);
     }
 
     private function validateLecturerAnnouncementScope($userId, $department_id, $course_id) {

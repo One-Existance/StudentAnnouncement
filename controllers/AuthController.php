@@ -28,29 +28,24 @@ class AuthController {
      */
     public function login($email, $password) {
         if (empty($email) || empty($password)) {
-            return ['success' => false, 'message' => 'Email and password are required'];
+            return $this->failure('Email and password are required');
         }
 
         $user = $this->userModel->getUserByEmail($email);
 
         if (!$user) {
-            return ['success' => false, 'message' => 'Invalid email or password'];
+            return $this->failure('Invalid email or password');
         }
 
         if (empty($user['password'])) {
-            return ['success' => false, 'message' => 'Password not set. Contact an administrator'];
+            return $this->failure('Password not set. Contact an administrator');
         }
 
         if (!password_verify($password, $user['password'])) {
-            return ['success' => false, 'message' => 'Invalid email or password'];
+            return $this->failure('Invalid email or password');
         }
 
-        // Set session variables
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_email'] = $user['email'];
-        $_SESSION['user_name'] = $user['name'];
-        $_SESSION['user_role'] = $user['role'];
-        $_SESSION['user_department'] = $user['department'];
+        $this->setSessionUser($user);
 
         return ['success' => true, 'message' => 'Login successful', 'user' => $user];
     }
@@ -136,6 +131,18 @@ class AuthController {
             header('Location: unauthorized.php');
             exit;
         }
+    }
+
+    private function setSessionUser($user) {
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_email'] = $user['email'];
+        $_SESSION['user_name'] = $user['name'];
+        $_SESSION['user_role'] = $user['role'];
+        $_SESSION['user_department'] = $user['department'];
+    }
+
+    private function failure($message) {
+        return ['success' => false, 'message' => $message];
     }
 }
 ?>

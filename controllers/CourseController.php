@@ -21,12 +21,13 @@ class CourseController {
             return ['success' => false, 'message' => 'Course name, code, and department ID are required'];
         }
 
-        try {
-            $id = $this->courseModel->create($course_name, $course_code, $department_id);
-            return ['success' => true, 'message' => 'Course created successfully', 'id' => $id];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($course_name, $course_code, $department_id) {
+                return $this->courseModel->create($course_name, $course_code, $department_id);
+            },
+            'Course created successfully',
+            true
+        );
     }
 
     /**
@@ -65,21 +66,36 @@ class CourseController {
             return ['success' => false, 'message' => 'Course name, code, and department ID are required'];
         }
 
-        try {
-            $this->courseModel->update($id, $course_name, $course_code, $department_id);
-            return ['success' => true, 'message' => 'Course updated successfully'];
-        } catch (Exception $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
-        }
+        return $this->runAction(
+            function () use ($id, $course_name, $course_code, $department_id) {
+                $this->courseModel->update($id, $course_name, $course_code, $department_id);
+            },
+            'Course updated successfully'
+        );
     }
 
     /**
      * Delete course
      */
     public function deleteCourse($id) {
+        return $this->runAction(
+            function () use ($id) {
+                $this->courseModel->delete($id);
+            },
+            'Course deleted successfully'
+        );
+    }
+
+    private function runAction($action, $successMessage, $includeId = false) {
         try {
-            $this->courseModel->delete($id);
-            return ['success' => true, 'message' => 'Course deleted successfully'];
+            $result = $action();
+            $response = ['success' => true, 'message' => $successMessage];
+
+            if ($includeId) {
+                $response['id'] = $result;
+            }
+
+            return $response;
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
